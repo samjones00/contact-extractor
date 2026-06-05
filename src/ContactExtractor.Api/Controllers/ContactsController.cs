@@ -1,30 +1,66 @@
-using ContactExtractor.Core.Models;
+using ContactExtractor.Api.Models;
 using ContactExtractor.Core.Services;
 using Microsoft.AspNetCore.Mvc;
 
 namespace ContactExtractor.Api.Controllers
 {
+    /// <summary>
+    /// Provides endpoints for searching and extracting contact information.
+    /// </summary>
     [ApiController]
     [Route("[controller]")]
+    [Tags("Contacts")]
     public class ContactsController : ControllerBase
     {
-        private readonly ILogger<ContactsController> _logger;
-        private readonly SearchService searchService;
-        private readonly HtmlContactParser htmlContactParser;
+        private readonly SearchService _searchService;
+        private readonly HtmlContactParser _htmlContactParser;
 
-        public ContactsController(ILogger<ContactsController> logger, SearchService searchService, HtmlContactParser htmlContactParser)
+        public ContactsController(SearchService searchService, HtmlContactParser htmlContactParser)
         {
-            _logger = logger;
-            this.searchService = searchService;
-            this.htmlContactParser = htmlContactParser;
+            _searchService = searchService ?? throw new ArgumentNullException(nameof(searchService));
+            _htmlContactParser = htmlContactParser ?? throw new ArgumentNullException(nameof(htmlContactParser));
         }
 
-        [HttpGet(Name = "GetContacts")]
-        public async Task<IEnumerable<Contact>> Get()
+        /// <summary>
+        /// Searches for solicitors in a given location and extracts contact information.
+        /// </summary>
+        /// <param name="request">The search request containing the location to search for.</param>
+        /// <returns>A list of contacts found in the specified location.</returns>
+        /// <remarks>
+        /// Sample request:
+        ///
+        ///     POST /contacts
+        ///     {
+        ///       "location": "london"
+        ///     }
+        ///
+        /// Sample response:
+        ///
+        ///     {
+        ///       "location": "london",
+        ///       "count": 42,
+        ///       "results": [
+        ///         {
+        ///           "name": "Example Solicitors",
+        ///           "email": "contact@example.com",
+        ///           "phone": "+44 123 456 7890"
+        ///         }
+        ///       ]
+        ///     }
+        /// </remarks>
+        [HttpPost(Name = nameof(Search))]
+        [Produces("application/json")]
+        [ProducesResponseType<SearchResponse>(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+        public async Task<SearchResponse> Search([FromBody] SearchRequest request)
         {
-            var html = await searchService.Search("london");
-            var contacts = htmlContactParser.ExtractContacts(html);
-            return contacts;
+            var location = request?.Location ?? throw new ArgumentNullException(nameof(request.Location));
+
+            var html = await _searchService.Search(location);
+            var contacts = _htmlContactParser.ExtractContacts(html);    
+
+            return new SearchResponse(location, contacts);
         }
     }
 }
