@@ -11,10 +11,10 @@ namespace ContactExtractor.Core
         {
             services.AddTransient<HtmlContactParser>();
             services.AddTransient<SearchService>();
-            services.AddHttpClient<SearchService>();
-            services.AddSingleton(x => new SearchSettings
+            services.AddHttpClient<SearchService>(x =>
             {
-                Url = "https://www.solicitors.com/prepare-search.asp"
+                x.BaseAddress = new Uri("https://www.solicitors.com/prepare-search.asp");
+                x.DefaultRequestHeaders.UserAgent.ParseAdd("Mozilla/5.0 (Windows NT 6.1; Win64; x64; rv:47.0) Gecko/20100101 Firefox/47.0");
             });
 
             services.AddSwaggerGen(options =>

@@ -1,0 +1,16 @@
+{
+    "chat.tools.terminal.autoApprove": {
+        "/^powershell -NoProfile -Command \"Get-Content \\.\\\\setup-and-run\\.bat \\| ForEach-Object \\{ '\\{0\\}: \\{1\\}' -f \\(\\$global:i = \\$global:i \\+ 1\\), \\$_ \\}\"$/": {
+            "approve": true,
+            "matchCommandLine": true
+        },
+        "/^cmd /c \"type setup-and-run\\.bat & echo ---END---\"$/": {
+            "approve": true,
+            "matchCommandLine": true
+        },
+        "/^powershell -NoProfile -Command \"\\$b=\\[System\\.IO\\.File\\]::ReadAllBytes\\('\\.\\\\\\\\setup-and-run\\.bat'\\); \\$b\\[0\\.\\.10\\] -join ','\"$/": {
+            "approve": true,
+            "matchCommandLine": true
+        }
+    }
+}
