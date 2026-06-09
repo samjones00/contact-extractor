@@ -1,13 +1,14 @@
 ﻿using System.Text.RegularExpressions;
 using System.Xml;
 using System.Xml.Linq;
+using ContactExtractor.Core.Interfaces;
 using HtmlAgilityPack;
 
 namespace ContactExtractor.Core.Services
 {
-    public class HtmlContactParser
+    public class HtmlContactParser : IHtmlContactParser
     {
-        public List<Models.Contact> ExtractContacts(string html)
+        public List<Models.Contact> Parse(string html)
         {
             var htmlDoc = new HtmlDocument();
             htmlDoc.LoadHtml(html);

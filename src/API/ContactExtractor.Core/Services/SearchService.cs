@@ -2,7 +2,7 @@
 
 namespace ContactExtractor.Core.Services
 {
-    public class SearchService(HttpClient httpClient) : ISearchService
+    public class SearchService(IHttpClientFactory httpClientFactory) : ISearchService
     {
         public async Task<string> Search(string location, CancellationToken cancellationToken)
         {
@@ -16,7 +16,8 @@ namespace ContactExtractor.Core.Services
             {
                 Content = new FormUrlEncodedContent(values)
             };
-    
+
+            var httpClient = httpClientFactory.CreateClient(nameof(SearchService));
             using var response = await httpClient.SendAsync(request, cancellationToken);
             response.EnsureSuccessStatusCode();
 

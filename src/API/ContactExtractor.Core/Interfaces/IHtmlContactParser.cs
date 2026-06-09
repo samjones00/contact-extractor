@@ -4,6 +4,6 @@ namespace ContactExtractor.Core.Interfaces
 {
     public interface IHtmlContactParser
     {
-        List<Contact> ExtractContacts(string html);
+        List<Contact> Parse(string html);
     }
 }

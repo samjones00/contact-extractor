@@ -32,10 +32,12 @@ npm run run-app
 
 ### Functional
 * API Search endpoint, which accepts a location and returns a list of contact details for conveyancers in that location
+* The available locations are read from appsettings and available from /solicitors/locations, making the SPA and API available locations match
+* If the location is empty or unsupported, a bad request is returned.
 
 ### TODO:
-Add caching
-Get locations from /settings/locations
+* Update code to return details for the bottom contacts
+* Add C4 diagram L2, L3?
 
 ### Copilot use
 * XML Doc comments, used when displaying the API documentation in swagger
@@ -44,6 +46,7 @@ Get locations from /settings/locations
 * Polly to retry transient errors when calling the external site
 * Pagination
 * Logging
+* Caching - the http response could be cached to prevent unnecessary calls to solicitors.com
 
 ## Decisions
 * I'm using XPath to find the html elements, it's very fragile as a minor change can break the extraction. However, I couldn't think of a better way.
@@ -52,3 +55,4 @@ Get locations from /settings/locations
 * https://www.solicitors.com does not have a rate limitter, downtime or any other way of making the site unavailable.
 * The query format and the layout of the html on https://www.solicitors.com does not change
 * The correct value has been entered on https://www.solicitors.com, e.g. there is an address in the address html element
+* The location name is sent in the same format as received in the /locations endpoint, matching the casing.

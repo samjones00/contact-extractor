@@ -18,7 +18,7 @@ namespace ContactExtractor.Core
             services.AddValidatorsFromAssembly(assembly);
             services.AddTransient<IHtmlContactParser, HtmlContactParser>();
             services.AddTransient<ISearchService, SearchService>();
-            services.AddHttpClient<SearchService>(x =>
+            services.AddHttpClient<SearchService>(nameof(SearchService), x =>
             {
                 x.BaseAddress = new Uri(settings.Url);
                 x.DefaultRequestHeaders.UserAgent.ParseAdd("Mozilla/5.0 (Windows NT 6.1; Win64; x64; rv:47.0) Gecko/20100101 Firefox/47.0");

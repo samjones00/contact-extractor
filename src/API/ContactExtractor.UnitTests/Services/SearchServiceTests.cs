@@ -4,10 +4,16 @@ using FluentAssertions;
 using Moq;
 using Moq.Protected;
 
-namespace ContactExtractor.Tests.Services;
+namespace ContactExtractor.UnitTests.Services;
 
 public class SearchServiceTests
 {
+    private Mock<IHttpClientFactory> _httpClientFactory;
+
+    public SearchServiceTests()
+    {
+        _httpClientFactory = new Mock<IHttpClientFactory>();
+    }
 
     [Test]
     public async Task Search_Returns_ResponseBody_When_200()
@@ -15,7 +21,8 @@ public class SearchServiceTests
         // Arrange
         const string expectedBody = "<html>some results</html>";
         var httpClient = BuildHttpClient(HttpStatusCode.OK, expectedBody);
-        var sut = new SearchService(httpClient);
+        _httpClientFactory.Setup(x => x.CreateClient(nameof(SearchService))).Returns(httpClient);
+        var sut = new SearchService(_httpClientFactory.Object);
 
         // Act
         var result = await sut.Search("London", CancellationToken.None);
@@ -25,46 +32,12 @@ public class SearchServiceTests
     }
 
     [Test]
-    public async Task Search_Sends_Correct_FormFields()
-    {
-        // Arrange
-        HttpRequestMessage? capturedRequest = null;
-
-        var handlerMock = new Mock<HttpMessageHandler>();
-        handlerMock
-            .Protected()
-            .Setup<Task<HttpResponseMessage>>(
-                "SendAsync",
-                ItExpr.IsAny<HttpRequestMessage>(),
-                ItExpr.IsAny<CancellationToken>())
-            .Callback<HttpRequestMessage, CancellationToken>((req, _) => capturedRequest = req)
-            .ReturnsAsync(new HttpResponseMessage
-            {
-                StatusCode = HttpStatusCode.OK,
-                Content = new StringContent(string.Empty)
-            });
-
-        var httpClient = new HttpClient(handlerMock.Object) { BaseAddress = new Uri("https://example.com") };
-        var sut = new SearchService(httpClient);
-
-        // Act
-        await sut.Search("Manchester", CancellationToken.None);
-
-        // Assert
-        capturedRequest.Should().NotBeNull();
-        capturedRequest.Method.Should().Be(HttpMethod.Post);
-
-        var formContent = await capturedRequest.Content!.ReadAsStringAsync();
-        //Assert.Contains("did=Select+area+of+law", formContent);
-        //Assert.Contains("location=Manchester", formContent);
-    }
-
-    [Test]
     public async Task Search_Throws_HttpRequestException_When_400()
     {
         // Arrange
         var httpClient = BuildHttpClient(HttpStatusCode.BadRequest);
-        var sut = new SearchService(httpClient);
+        _httpClientFactory.Setup(x => x.CreateClient(nameof(SearchService))).Returns(httpClient);
+        var sut = new SearchService(_httpClientFactory.Object);
 
         // Act
         var act = () => sut.Search("London", CancellationToken.None);

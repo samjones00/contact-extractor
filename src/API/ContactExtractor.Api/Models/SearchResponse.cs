@@ -1,32 +1,14 @@
 ﻿using ContactExtractor.Core.Models;
 
-namespace ContactExtractor.Api.Models
+namespace ContactExtractor.Api.Models;
+
+/// <summary>
+/// Represents the response from a solicitor search.
+/// </summary>
+public record SearchResponse(string Location, IEnumerable<Contact> Results)
 {
     /// <summary>
-    /// Represents the response from a contact search operation.
+    /// Gets the total number of solicitors found.
     /// </summary>
-    public class SearchResponse
-    {
-        /// <summary>
-        /// Gets the location that was searched.
-        /// </summary>
-        public string Location { get; private set; }
-
-        /// <summary>
-        /// Gets the total number of contacts found.
-        /// </summary>
-        public int Count { get; private set; }
-
-        /// <summary>
-        /// Gets the collection of contacts found in the search result.
-        /// </summary>
-        public IEnumerable<Contact> Results { get; private set; }
-
-        public SearchResponse(string location, IEnumerable<Contact> results)
-        {
-            Results = results;
-            Location = location;
-            Count = results.Count();
-        }
-    }
+    public int Count => Results?.Count() ?? 0;
 }

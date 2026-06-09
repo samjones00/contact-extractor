@@ -1,6 +1,7 @@
 using ContactExtractor.Api.Models;
 using ContactExtractor.Api.Validators;
 using ContactExtractor.Core.Interfaces;
+using ContactExtractor.Core.Models;
 using Microsoft.AspNetCore.Mvc;
 
 namespace ContactExtractor.Api.Controllers
@@ -9,21 +10,11 @@ namespace ContactExtractor.Api.Controllers
     /// Provides endpoints for searching contact information.
     /// </summary>
     [ApiController]
+    [Produces("application/json")]
     [Route("[controller]")]
-    [Tags("Contacts")]
-    public class ContactsController : ControllerBase
+    [Tags("Solicitors")]
+    public class SolicitorsController(ISearchService searchService, IHtmlContactParser htmlContactParser, Settings settings, SearchRequestValidator validator) : ControllerBase
     {
-        private readonly ISearchService _searchService;
-        private readonly IHtmlContactParser _htmlContactParser;
-        private readonly SearchRequestValidator _validator;
-
-        public ContactsController(ISearchService searchService, IHtmlContactParser htmlContactParser, SearchRequestValidator validator)
-        {
-            _searchService = searchService;
-            _htmlContactParser = htmlContactParser;
-            _validator = validator;
-        }
-
         /// <summary>
         /// Searches for solicitors in a given location and extracts contact information.
         /// </summary>
@@ -53,13 +44,12 @@ namespace ContactExtractor.Api.Controllers
         ///     }
         /// </remarks>
         [HttpPost(Name = nameof(Search))]
-        [Produces("application/json")]
         [ProducesResponseType<SearchResponse>(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<IActionResult> Search([FromBody] SearchRequest request, CancellationToken cancellationToken)
         {
-            var validationResult = await _validator.ValidateAsync(request, cancellationToken);
+            var validationResult = await validator.ValidateAsync(request, cancellationToken);
 
             if (!validationResult.IsValid)
             {
@@ -71,10 +61,18 @@ namespace ContactExtractor.Api.Controllers
                 return ValidationProblem(ModelState);
             }
 
-            var html = await _searchService.Search(request.Location, cancellationToken);
-            var contacts = _htmlContactParser.ExtractContacts(html);
+            var html = await searchService.Search(request.Location, cancellationToken);
+            var contacts = htmlContactParser.Parse(html);
 
             return Ok(new SearchResponse(request.Location, contacts));
         }
+
+        /// <summary>
+        /// Locationses this instance.
+        /// </summary>
+        /// <returns></returns>
+        [HttpGet(nameof(Locations))]
+        [ProducesResponseType<List<string>>(StatusCodes.Status200OK)]
+        public IActionResult Locations() => Ok(settings.AllowedLocations.OrderBy(x => x));
     }
 }

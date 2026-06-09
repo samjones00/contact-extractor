@@ -6,6 +6,10 @@ namespace ContactExtractor.Api.Validators
 {
     public class SearchRequestValidator : AbstractValidator<SearchRequest>
     {
+        /// <summary>
+        /// Initializes a new instance of the <see cref="SearchRequestValidator"/> class.
+        /// </summary>
+        /// <param name="settings">The settings.</param>
         public SearchRequestValidator(Settings settings)
         {
             RuleFor(x => x.Location)
