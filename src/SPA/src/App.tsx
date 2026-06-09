@@ -1,4 +1,4 @@
-import { FormEvent, useState } from 'react';
+import { FormEvent, useEffect, useState } from 'react';
 
 type ContactResult = {
   name: string;
@@ -14,15 +14,38 @@ type ApiResponse = {
   results: ContactResult[];
 };
 
-const locationOptions = ['London', 'Birmingham', 'Leeds'];
-
 function App() {
+  const [locationOptions, setLocationOptions] = useState<string[]>([]);
+  const [locationsLoading, setLocationsLoading] = useState(true);
+  const [locationsError, setLocationsError] = useState('');
   const [selectedLocation, setSelectedLocation] = useState('');
   const [submittedLocation, setSubmittedLocation] = useState('');
   const [results, setResults] = useState<ContactResult[]>([]);
   const [count, setCount] = useState<number | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+
+  useEffect(() => {
+    const fetchLocations = async () => {
+      try {
+        const response = await fetch('/Settings/locations', {
+          method: 'GET',
+          headers: { accept: 'application/json' },
+        });
+        if (!response.ok) {
+          throw new Error(`Failed to load locations (status ${response.status})`);
+        }
+        const data = (await response.json()) as string[];
+        setLocationOptions(Array.isArray(data) ? data : []);
+      } catch (err) {
+        setLocationsError(err instanceof Error ? err.message : 'Failed to load locations');
+      } finally {
+        setLocationsLoading(false);
+      }
+    };
+
+    fetchLocations();
+  }, []);
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -75,22 +98,29 @@ function App() {
                   <label htmlFor="locationSelect" className="form-label">
                     Location
                   </label>
-                  <select
-                    id="locationSelect"
-                    className="form-select"
-                    value={selectedLocation}
-                    onChange={(event) => setSelectedLocation(event.target.value)}
-                  >
-                    <option value="">Select a city</option>
-                    {locationOptions.map((location) => (
-                      <option key={location} value={location}>
-                        {location}
-                      </option>
-                    ))}
-                  </select>
+                  {locationsError ? (
+                    <div className="alert alert-danger py-2 mb-0" role="alert">
+                      {locationsError}
+                    </div>
+                  ) : (
+                    <select
+                      id="locationSelect"
+                      className="form-select"
+                      value={selectedLocation}
+                      onChange={(event) => setSelectedLocation(event.target.value)}
+                      disabled={locationsLoading}
+                    >
+                      <option value="">{locationsLoading ? 'Loading locations…' : 'Select a city'}</option>
+                      {locationOptions.map((location) => (
+                        <option key={location} value={location}>
+                          {location}
+                        </option>
+                      ))}
+                    </select>
+                  )}
                 </div>
                 <div className="col-12 col-sm-4 d-grid">
-                  <button className="btn btn-primary" type="submit" disabled={!selectedLocation || loading}>
+                  <button className="btn btn-primary" type="submit" disabled={!selectedLocation || loading || locationsLoading}>
                     {loading ? 'Searching…' : 'Search'}
                   </button>
                 </div>

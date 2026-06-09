@@ -1,9 +1,10 @@
 using System.Runtime.CompilerServices;
 using ContactExtractor.Core.Services;
+using FluentAssertions;
 
 namespace ContactExtractor.UnitTests.ExtractorServiceTests
 {
-    public class Tests
+    public class ExtractorServiceTests
     {
         private HtmlContactParser _service;
 
@@ -21,7 +22,14 @@ namespace ContactExtractor.UnitTests.ExtractorServiceTests
 
             var response = _service.ExtractContacts(htmlContent);
 
-            Assert.AreNotEqual(0, response.Count);
+            for (int i = 0; i < response.Count; i++)
+            {
+                response[i].Name.Should().NotBeNullOrEmpty($"Number: {i}");
+                //contact.Telephone.Should().NotBeNullOrEmpty();
+                //contact.Address.Should().NotBeNullOrEmpty();
+            }
+
+            response.Count.Should().BeGreaterThan(0);
         }
     }
 }

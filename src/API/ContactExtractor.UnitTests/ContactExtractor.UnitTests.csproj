@@ -11,13 +11,16 @@
 
   <ItemGroup>
     <PackageReference Include="coverlet.collector" Version="6.0.0" />
+    <PackageReference Include="FluentAssertions" Version="8.10.0" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.8.0" />
+    <PackageReference Include="Moq" Version="4.20.72" />
     <PackageReference Include="NUnit" Version="3.14.0" />
     <PackageReference Include="NUnit.Analyzers" Version="3.9.0" />
     <PackageReference Include="NUnit3TestAdapter" Version="4.5.0" />
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\ContactExtractor.Api\ContactExtractor.Api.csproj" />
     <ProjectReference Include="..\ContactExtractor.Core\ContactExtractor.Core.csproj" />
   </ItemGroup>
 
@@ -26,10 +29,10 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Update="ExtractorServiceTests\Artifacts\search-query.http">
+    <None Update="Services\Artifacts\search-query.http">
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </None>
-    <None Update="ExtractorServiceTests\Artifacts\search-response.html">
+    <None Update="Services\Artifacts\search-response.html">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
   </ItemGroup>

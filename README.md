@@ -8,10 +8,10 @@ The results are then formatted and displayed for the user to view.
 ## Getting Started
 
 ### Pre-requisites
-* .NET 8 SDK
-* NodeJs 18
+* .NET 8 SDK - `winget install -e --id Microsoft.DotNet.SDK.8`
+* NodeJs 18 - `winget install -e --id OpenJS.NodeJS`
 
-### Starting the appllication
+### Starting the application
 
 #### API
 Swagger page available at https://localhost:7101/swagger/index.html, where 7101 is the port number of the API, which may be different in your case.
@@ -35,11 +35,13 @@ npm run run-app
 
 ### TODO:
 Add caching
+Get locations from /settings/locations
 
 ### Copilot use
 * XML Doc comments, used when displaying the API documentation in swagger
 
 ## Features Not implemented
+* Polly to retry transient errors when calling the external site
 * Pagination
 * Logging
 

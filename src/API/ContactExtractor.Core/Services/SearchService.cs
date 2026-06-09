@@ -1,10 +1,10 @@
-﻿using ContactExtractor.Core.Models;
+﻿using ContactExtractor.Core.Interfaces;
 
 namespace ContactExtractor.Core.Services
 {
-    public class SearchService(HttpClient httpClient)
+    public class SearchService(HttpClient httpClient) : ISearchService
     {
-        public async Task<string> Search(string location)
+        public async Task<string> Search(string location, CancellationToken cancellationToken)
         {
             var values = new[]
             {
@@ -17,10 +17,10 @@ namespace ContactExtractor.Core.Services
                 Content = new FormUrlEncodedContent(values)
             };
     
-            using var response = await httpClient.SendAsync(request);
+            using var response = await httpClient.SendAsync(request, cancellationToken);
             response.EnsureSuccessStatusCode();
 
-            return await response.Content.ReadAsStringAsync();
+            return await response.Content.ReadAsStringAsync(cancellationToken);
         }
     }
 }
