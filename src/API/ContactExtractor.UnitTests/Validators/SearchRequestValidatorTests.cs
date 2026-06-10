@@ -62,6 +62,18 @@ namespace ContactExtractor.UnitTests.Validators
                 .Which.ErrorMessage.Should().Be("'Location' not supported.");
         }
 
+        [Test]
+        public void GivenLocationWithWrongCase_ShouldBeFalse()
+        {
+            var request = new SearchRequest { Location = "london" };
+
+            var result = _validator.Validate(request);
+
+            result.IsValid.Should().BeFalse();
+            result.Errors.Should().Contain(e => e.PropertyName == nameof(SearchRequest.Location))
+                .Which.ErrorMessage.Should().Be("'Location' not supported.");
+        }
+
         public static IEnumerable<string> NullOrEmptyStrings = [null, "", " "];
 
     }

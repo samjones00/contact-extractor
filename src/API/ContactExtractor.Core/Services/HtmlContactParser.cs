@@ -1,6 +1,4 @@
 ﻿using System.Text.RegularExpressions;
-using System.Xml;
-using System.Xml.Linq;
 using ContactExtractor.Core.Interfaces;
 using HtmlAgilityPack;
 
@@ -13,54 +11,87 @@ namespace ContactExtractor.Core.Services
             var htmlDoc = new HtmlDocument();
             htmlDoc.LoadHtml(html);
 
-            var items = htmlDoc.DocumentNode.SelectNodes("//div[contains(concat(' ', normalize-space(@class), ' '), ' result-item ')]");
-            var result = new List<Models.Contact>();
-            if (items == null) return result;
-
-            foreach (var item in items)
-            {
-                var h2 = item.SelectSingleNode(".//div[contains(concat(' ', normalize-space(@class),' '),' top-holder ')]//span[contains(concat(' ', normalize-space(@class),' '),' h2 ')]");
-                string rawName = string.Empty;
-                if (h2 != null)
-                {
-                    var textChild = h2.ChildNodes.FirstOrDefault(n => n.NodeType == HtmlNodeType.Text);
-                    rawName = (textChild != null ? textChild.InnerText : h2.InnerText) ?? string.Empty;
-                }
-                var name = CleanWhitespace(rawName);
-
-                var addressNode = item.SelectSingleNode(".//address");
-                var rawAddress = addressNode?.InnerText ?? string.Empty;
-                var address = CleanWhitespace(rawAddress);
-
-                var phoneAnchor = item.SelectSingleNode(".//a[starts-with(normalize-space(@href),'tel:')]");
-                var telephone = phoneAnchor != null
-                    ? phoneAnchor.InnerText.Trim()
-                    : (item.SelectSingleNode(".//div[contains(concat(' ', normalize-space(@class),' '),' phone-block ')]//a")?.InnerText.Trim() ?? string.Empty);
-
-                var descNode = item.SelectSingleNode("./p");
-                var rawDescription = descNode?.InnerText ?? string.Empty;
-                var description = CleanWhitespace(rawDescription);
-
-                var websiteAnchor = item.SelectSingleNode(".//a[@target='_blank' and starts-with(@href,'http')]");
-                var website = websiteAnchor?.GetAttributeValue("href", string.Empty).Trim() ?? string.Empty;
-
-                result.Add(new(name, address, telephone, description, website));
-            }
-
-            return result;
+            return htmlDoc.DocumentNode
+                .Descendants("div")
+                .Where(d => d.HasClass("result-item"))
+                .Select(ToContact)
+                .ToList();
         }
+
+        private static Models.Contact ToContact(HtmlNode item) =>
+            new(
+                ExtractName(item),
+                ExtractAddress(item),
+                ExtractTelephone(item),
+                ExtractDescription(item),
+                ExtractWebsite(item)
+            );
+
+        private static string ExtractName(HtmlNode item)
+        {
+            var h2 = item.Find("div.top-holder")?.Find("span.h2") ?? item.Find("span.h2");
+            if (h2 == null) return string.Empty;
+
+            var textChild = h2.ChildNodes.FirstOrDefault(n => n.NodeType == HtmlNodeType.Text);
+            return CleanWhitespace(textChild?.InnerText ?? h2.InnerText ?? string.Empty);
+        }
+
+        private static string ExtractAddress(HtmlNode item) =>
+            InnerTextOrEmpty(item.Find("address"));
+
+        private static string ExtractTelephone(HtmlNode item) =>
+            item.Find(a => a.HrefStartsWith("tel:"))?.InnerText.Trim()
+            ?? item.Find("div.phone-block")?.Find("a")?.InnerText.Trim()
+            ?? string.Empty;
+
+        private static string ExtractDescription(HtmlNode item) =>
+            InnerTextOrEmpty(item.Find("p"));
+
+        private static string ExtractWebsite(HtmlNode item) =>
+            item.Find(a => a.IsTargetBlank() && a.HrefStartsWith("http"))
+                ?.GetAttributeValue("href", "").Trim()
+            ?? string.Empty;
+
+        private static readonly Regex NewlineRegex = new("[\r\n\t]+");
+        private static readonly Regex NonAlphaNumRegex = new("[^A-Za-z0-9, ]+");
+        private static readonly Regex CollapseSpacesRegex = new(" {2,}");
 
         private static string CleanWhitespace(string input)
         {
-            if (string.IsNullOrEmpty(input))
-                return string.Empty;
+            if (string.IsNullOrEmpty(input)) return string.Empty;
 
-            var normalized = Regex.Replace(input, "[\r\n\t]+", " ");
-            var removedNonAlphaNum = Regex.Replace(normalized, "[^A-Za-z0-9, ]+", string.Empty);
-
-            var collapsed = Regex.Replace(removedNonAlphaNum, " {2,}", " ");
-
-            return collapsed.Trim();
+            return CollapseSpacesRegex.Replace(
+                NonAlphaNumRegex.Replace(
+                    NewlineRegex.Replace(input, " "), string.Empty), " ").Trim();
         }
+
+        private static string InnerTextOrEmpty(HtmlNode? node) =>
+            node?.InnerText is string text ? CleanWhitespace(text) : string.Empty;
+    }
+
+    internal static class HtmlNodeExtensions
+    {
+        internal static bool HasClass(this HtmlNode node, string className) =>
+            node.GetAttributeValue("class", "")
+                .Split(' ', StringSplitOptions.RemoveEmptyEntries)
+                .Contains(className);
+
+        internal static HtmlNode? Find(this HtmlNode node, string selector)
+        {
+            var parts = selector.Split('.', 2);
+            return parts.Length == 1
+                ? node.Descendants(parts[0]).FirstOrDefault()
+                : node.Descendants(parts[0]).FirstOrDefault(n => n.HasClass(parts[1]));
+        }
+
+        internal static HtmlNode? Find(this HtmlNode node, Func<HtmlNode, bool> predicate) =>
+            node.Descendants().FirstOrDefault(predicate);
+
+        internal static bool HrefStartsWith(this HtmlNode node, string prefix) =>
+            (node.GetAttributeValue("href", "") ?? "")
+                .StartsWith(prefix, StringComparison.OrdinalIgnoreCase);
+
+        internal static bool IsTargetBlank(this HtmlNode node) =>
+            node.GetAttributeValue("target", "") == "_blank";
     }
 }
