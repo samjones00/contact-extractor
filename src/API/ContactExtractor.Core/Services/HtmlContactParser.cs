@@ -1,24 +1,25 @@
 ﻿using System.Text.RegularExpressions;
 using ContactExtractor.Core.Interfaces;
+using ContactExtractor.Core.Models;
 using HtmlAgilityPack;
 
 namespace ContactExtractor.Core.Services
 {
     public class HtmlContactParser : IHtmlContactParser
     {
-        public List<Models.Contact> Parse(string html)
+        public List<Contact> Parse(string html)
         {
-            var htmlDoc = new HtmlDocument();
-            htmlDoc.LoadHtml(html);
+            var htmlDocument = new HtmlDocument();
+            htmlDocument.LoadHtml(html);
 
-            return htmlDoc.DocumentNode
+            return htmlDocument.DocumentNode
                 .Descendants("div")
                 .Where(d => d.HasClass("result-item"))
                 .Select(ToContact)
                 .ToList();
         }
 
-        private static Models.Contact ToContact(HtmlNode item) =>
+        private static Contact ToContact(HtmlNode item) =>
             new(
                 ExtractName(item),
                 ExtractAddress(item),
@@ -29,7 +30,7 @@ namespace ContactExtractor.Core.Services
 
         private static string ExtractName(HtmlNode item)
         {
-            var h2 = item.Find("div.top-holder")?.Find("span.h2") ?? item.Find("span.h2");
+            var h2 = item.Find("span.h2");
             if (h2 == null) return string.Empty;
 
             var textChild = h2.ChildNodes.FirstOrDefault(n => n.NodeType == HtmlNodeType.Text);
@@ -41,7 +42,6 @@ namespace ContactExtractor.Core.Services
 
         private static string ExtractTelephone(HtmlNode item) =>
             item.Find(a => a.HrefStartsWith("tel:"))?.InnerText.Trim()
-            ?? item.Find("div.phone-block")?.Find("a")?.InnerText.Trim()
             ?? string.Empty;
 
         private static string ExtractDescription(HtmlNode item) =>
@@ -58,7 +58,8 @@ namespace ContactExtractor.Core.Services
 
         private static string CleanWhitespace(string input)
         {
-            if (string.IsNullOrEmpty(input)) return string.Empty;
+            if (string.IsNullOrEmpty(input)) 
+                return string.Empty;
 
             return CollapseSpacesRegex.Replace(
                 NonAlphaNumRegex.Replace(
@@ -67,31 +68,5 @@ namespace ContactExtractor.Core.Services
 
         private static string InnerTextOrEmpty(HtmlNode? node) =>
             node?.InnerText is string text ? CleanWhitespace(text) : string.Empty;
-    }
-
-    internal static class HtmlNodeExtensions
-    {
-        internal static bool HasClass(this HtmlNode node, string className) =>
-            node.GetAttributeValue("class", "")
-                .Split(' ', StringSplitOptions.RemoveEmptyEntries)
-                .Contains(className);
-
-        internal static HtmlNode? Find(this HtmlNode node, string selector)
-        {
-            var parts = selector.Split('.', 2);
-            return parts.Length == 1
-                ? node.Descendants(parts[0]).FirstOrDefault()
-                : node.Descendants(parts[0]).FirstOrDefault(n => n.HasClass(parts[1]));
-        }
-
-        internal static HtmlNode? Find(this HtmlNode node, Func<HtmlNode, bool> predicate) =>
-            node.Descendants().FirstOrDefault(predicate);
-
-        internal static bool HrefStartsWith(this HtmlNode node, string prefix) =>
-            (node.GetAttributeValue("href", "") ?? "")
-                .StartsWith(prefix, StringComparison.OrdinalIgnoreCase);
-
-        internal static bool IsTargetBlank(this HtmlNode node) =>
-            node.GetAttributeValue("target", "") == "_blank";
     }
 }

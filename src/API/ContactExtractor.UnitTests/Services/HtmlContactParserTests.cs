@@ -17,34 +17,31 @@ namespace ContactExtractor.UnitTests.Services
         public void GivenHtml_LargeContent_ShouldReturnContacts()
         {
             var htmlContent = GetHtmlContent();
-            var response = _service.Parse(htmlContent);
-
-            response = response.Take(63).ToList();
+            var response = _service.Parse(htmlContent).Take(63).ToList();
 
             response.Count.Should().BeGreaterThan(0);
 
             for (int i = 0; i < response.Count; i++)
             {
-                var because = $"Number: {i}";
+                var because = $"Contact Number: {i}";
                 response[i].Name.Should().NotBeNullOrEmpty(because);
                 response[i].Telephone.Should().NotBeNullOrEmpty(because);
                 response[i].Address.Should().NotBeNullOrEmpty(because);
+                response[i].Url.Should().NotBeNullOrEmpty(because);
             }
         }
 
         [Test]
-        public void GivenHtml__SmallContent_ShouldReturnContacts()
+        public void GivenHtml_SmallContent_ShouldReturnContacts()
         {
             var htmlContent = GetHtmlContent();
-            var response = _service.Parse(htmlContent);
-
-            response = [.. response.Skip(63)];
+            var response = _service.Parse(htmlContent).Skip(63).ToList();
 
             response.Count.Should().BeGreaterThan(0);
 
             for (int i = 0; i < response.Count; i++)
             {
-                var because = $"Number: {i}";
+                var because = $"Contact Number: {i}";
                 response[i].Name.Should().NotBeNullOrEmpty(because);
                 response[i].Telephone.Should().NotBeNullOrEmpty(because);
                 response[i].Address.Should().NotBeNullOrEmpty(because);

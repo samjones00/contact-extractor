@@ -1,16 +1,25 @@
 using ContactExtractor.Core;
-using System.Reflection;
+using FluentValidation;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddServices(builder.Configuration, Assembly.GetExecutingAssembly());
+builder.Services.AddServices(builder.Configuration);
+builder.Services.AddValidatorsFromAssembly(typeof(Program).Assembly);
+
+builder.Services.AddSwaggerGen(options =>
+{
+    var xmlFile = $"{typeof(Program).Assembly.GetName().Name}.xml";
+    var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
+    if (File.Exists(xmlPath))
+    {
+        options.IncludeXmlComments(xmlPath);
+    }
+});
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
@@ -18,9 +27,7 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
-
 app.UseAuthorization();
-
 app.MapControllers();
 
 app.Run();

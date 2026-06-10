@@ -28,7 +28,7 @@ function App() {
   useEffect(() => {
     const fetchLocations = async () => {
       try {
-        const response = await fetch('/Settings/locations', {
+        const response = await fetch('/Solicitors/Locations', {
           method: 'GET',
           headers: { accept: 'application/json' },
         });
@@ -59,7 +59,7 @@ function App() {
     setCount(null);
 
     try {
-      const response = await fetch('/Contacts', {
+      const response = await fetch('/Solicitors', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

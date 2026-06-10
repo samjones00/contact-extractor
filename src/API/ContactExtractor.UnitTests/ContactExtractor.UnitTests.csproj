@@ -29,9 +29,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Update="Services\Artifacts\search-query.http">
-      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
-    </None>
     <None Update="Services\Artifacts\search-response.html">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>

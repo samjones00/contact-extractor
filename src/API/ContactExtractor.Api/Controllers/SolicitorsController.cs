@@ -24,7 +24,7 @@ namespace ContactExtractor.Api.Controllers
         /// <remarks>
         /// Sample request:
         ///
-        ///     POST /contacts
+        ///     POST /solicitors
         ///     {
         ///       "location": "london"
         ///     }
@@ -49,28 +49,34 @@ namespace ContactExtractor.Api.Controllers
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<IActionResult> Search([FromBody] SearchRequest request, CancellationToken cancellationToken)
         {
-            var validationResult = await validator.ValidateAsync(request, cancellationToken);
-
-            if (!validationResult.IsValid)
+            try
             {
-                foreach (var error in validationResult.Errors)
+                var validationResult = await validator.ValidateAsync(request, cancellationToken);
+
+                if (!validationResult.IsValid)
                 {
-                    ModelState.AddModelError(error.PropertyName, error.ErrorMessage);
+                    foreach (var error in validationResult.Errors)
+                    {
+                        ModelState.AddModelError(error.PropertyName, error.ErrorMessage);
+                    }
+
+                    return ValidationProblem(ModelState);
                 }
 
-                return ValidationProblem(ModelState);
+                var html = await searchService.Search(request.Location, cancellationToken);
+                var contacts = htmlContactParser.Parse(html);
+
+                return Ok(new SearchResponse(request.Location, contacts));
             }
-
-            var html = await searchService.Search(request.Location, cancellationToken);
-            var contacts = htmlContactParser.Parse(html);
-
-            return Ok(new SearchResponse(request.Location, contacts));
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { error = "An unexpected error occurred.", detail = ex.Message });
+            }
         }
 
         /// <summary>
-        /// Locationses this instance.
+        /// Gets the list of supported locations.
         /// </summary>
-        /// <returns></returns>
         [HttpGet(nameof(Locations))]
         [ProducesResponseType<List<string>>(StatusCodes.Status200OK)]
         public IActionResult Locations() => Ok(settings.AllowedLocations.OrderBy(x => x));

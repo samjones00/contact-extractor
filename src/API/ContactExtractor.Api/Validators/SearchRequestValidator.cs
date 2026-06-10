@@ -4,6 +4,9 @@ using FluentValidation;
 
 namespace ContactExtractor.Api.Validators
 {
+    /// <summary>
+    /// Validates <see cref="SearchRequest"/> instances.
+    /// </summary>
     public class SearchRequestValidator : AbstractValidator<SearchRequest>
     {
         /// <summary>

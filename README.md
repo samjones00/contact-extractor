@@ -1,9 +1,27 @@
 # contact-extractor
 
 ## Objective
-There is a requirement to create a single page app with a location select list, which submits a query to an API which in turn scrapes an external conveyancy site.
+There is a requirement to create a single page app with a location select list, which submits a query to an API which in turn scrapes an external conveyancy site, solicitors.com
 
 The results are then formatted and displayed for the user to view.
+
+## Specifications
+
+### Implemented
+
+- **API Search endpoint** accepts a location and returns a list of contact details for conveyancers in that location.
+- **Supported locations** are read from `appsettings`, exposed via `/Solicitors/Locations`, and retrieved by the SPA, keeping both apps in sync.
+- **Invalid location returns 400** — empty or unsupported locations return a bad request response.
+- **Parser extracts contacts from full result items** — `HtmlContactParser` extracts name, telephone, and address from standard `div.result-item` elements.
+- **Parser extracts contacts from small result items** — contact details are also extracted from `div.result-item.item-small` elements.
+
+### Future
+
+- **Resilience** — Polly retry policy for transient errors when calling the external site.
+- **Pagination** — support for paged result sets.
+- **Logging** — structured request/error logging.
+- **Caching** — cache upstream HTTP responses to avoid repeated calls to solicitors.com for the same request.
+- **Middleware** — global exception handling, request validation, etc, over-engineering for a single endpoint.
 
 ## Getting Started
 
@@ -13,46 +31,49 @@ The results are then formatted and displayed for the user to view.
 
 ### Starting the application
 
-#### API
-Swagger page available at https://localhost:7101/swagger/index.html, where 7101 is the port number of the API, which may be different in your case.
+#### Quick start (recommended)
+From the repository root:
+```bash
+run.bat
+```
+This restores API packages, starts the API on `http://localhost:5005`, builds the SPA, and launches the Vite dev server on `http://localhost:5173`.
 
-To call the API directly, you can launch swagger and use the following request body:
+#### Manual start
+
+##### API
+```bash
+cd src\API\ContactExtractor.Api
+dotnet run --launch-profile http
+```
+Swagger: `http://localhost:5005/swagger`
+
+Example request:
 ```json
 {
   "location": "London"
 }
-````
+```
 
-#### Frontend
+##### Frontend
 ```bash
+cd src\SPA
 npm run run-app
 ```
 
-## Features implemented
+## Technical Decisions
 
-### Functional
-* API Search endpoint, which accepts a location and returns a list of contact details for conveyancers in that location
-* The available locations are read from appsettings and available from /solicitors/locations, making the SPA and API available locations match
-* If the location is empty or unsupported, a bad request is returned.
-
-### TODO:
-* Update code to return details for the bottom contacts
-* Add C4 diagram L2, L3?
-
-### Copilot use
-* XML Doc comments, used when displaying the API documentation in swagger
-
-## Features Not implemented
-* Polly to retry transient errors when calling the external site
-* Pagination
-* Logging
-* Caching - the http response could be cached to prevent unnecessary calls to solicitors.com
-
-## Decisions
-* I'm using XPath to find the html elements, it's very fragile as a minor change can break the extraction. However, I couldn't think of a better way.
+- ~~XPath is used to find HTML elements. This is fragile — a minor markup change can break extraction — but no better approach was identified at the time.~~
+- LINQ is used to find the HTML elements, this is still fragile but easier to handle different html layouts.
+- XML Doc comments are used when displaying the API documentation in Swagger.
 
 ## Assumptions
-* https://www.solicitors.com does not have a rate limitter, downtime or any other way of making the site unavailable.
-* The query format and the layout of the html on https://www.solicitors.com does not change
-* The correct value has been entered on https://www.solicitors.com, e.g. there is an address in the address html element
-* The location name is sent in the same format as received in the /locations endpoint, matching the casing.
+
+- https://www.solicitors.com does not have a rate limiter, downtime, or any other mechanism that would make the site unavailable.
+- The query format and HTML layout of https://www.solicitors.com do not change.
+- The correct value has been entered on https://www.solicitors.com, e.g. there is an address in the address HTML element.
+- The location name is sent in the same format as received from the `/Solicitors/Locations` endpoint, matching the casing.
+
+## AI
+- Created run.bat, I tend to do this for all projects where there are nultiple steps to start the application.
+- Created the initial structure for the SPA.
+- I used OpenCode (local LLM coding agent) to help with development, review changes, etc.
